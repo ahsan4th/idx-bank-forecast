@@ -136,11 +136,35 @@ def test_installer_references_files_that_exist():
     assert helpers == ["cek_instalasi.py", "unduh_model.py"]
     for helper in helpers:
         assert (ROOT / "installer" / helper).is_file(), helper
-    copied = re.findall(r"'([^']+)'", re.search(r"foreach \(\$name in @\(([^)]*)\)\)", script).group(1))
+    copied = re.findall(r"'([^']+)'", re.search(r"\$Scripts\s*=\s*@\(([^)]*)\)", script).group(1))
     assert copied == ["jalankan.bat", "hapus.bat", "hapus.ps1"]
     for name in copied:
         assert (ROOT / "installer" / "windows" / name).is_file(), name
     assert (ROOT / "requirements.txt").is_file() and (ROOT / "requirements-lite.txt").is_file()
+
+
+def test_install_and_uninstall_never_wait_for_typing():
+    for name in ("pasang.ps1", "hapus.ps1"):
+        script = (ROOT / "installer" / "windows" / name).read_text(encoding="ascii")
+        assert "Read-Host" not in script, name
+    launcher = (ROOT / "pasang_windows.bat").read_text(encoding="ascii")
+    success_path, failure_path = launcher.split(":failed", 1)
+    assert "pause" not in success_path.lower()
+    assert "pause" in failure_path.lower()  # an error stays on screen until it has been read
+
+
+def test_install_ends_by_opening_the_app():
+    script = (ROOT / "installer" / "windows" / "pasang.ps1").read_text(encoding="ascii")
+    main = script[script.index("Start-Transcript"):]
+    # The mark of the web is removed before anything is launched from the installed files.
+    assert main.index("Unblock-InstalledFiles") < main.index("Start-Process -FilePath $Launcher")
+
+
+def test_launcher_downloads_this_repository_when_run_on_its_own():
+    launcher = (ROOT / "pasang_windows.bat").read_text(encoding="ascii")
+    assert r"%~dp0installer\windows\pasang.ps1" in launcher
+    assert "https://github.com/ahsan4th/idx-bank-forecast/archive/refs/heads/main.zip" in launcher
+    assert r"idx-bank-forecast-main\installer\windows\pasang.ps1" in launcher
 
 
 def test_timestral_pin_is_the_same_commit_everywhere():

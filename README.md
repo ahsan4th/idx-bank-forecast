@@ -58,11 +58,16 @@ streamlit run streamlit_app.py
 
 Untuk Windows 10/11 64-bit, tanpa hak admin dan tanpa memasang Python sendiri:
 
-1. Unduh kode sebagai ZIP dari GitHub (**Code** → **Download ZIP**), lalu ekstrak.
-2. Klik dua kali `pasang_windows.bat`. Bila Windows menampilkan peringatan keamanan, pilih
-   **More info** → **Run anyway** (atau **Run**), karena skripnya tidak ditandatangani.
-3. Setelah selesai, buka aplikasi lewat shortcut **Prakiraan Saham Bank BEI** di Desktop atau
-   Start Menu. Aplikasi terbuka di browser; tutup jendela konsolnya untuk berhenti.
+1. Klik dua kali `pasang_windows.bat`, dari folder hasil ekstrak ZIP atau langsung dari dalam ZIP.
+   Bila file itu dijalankan sendirian, kode aplikasi diunduh dulu dari GitHub.
+2. Tunggu. Tidak ada yang perlu diketik atau dipilih: setelah selesai, aplikasi terbuka sendiri di
+   browser dan jendela pemasang menutup sendiri.
+3. Lain kali, buka aplikasi lewat shortcut **Prakiraan Saham Bank BEI** di Desktop atau Start Menu.
+   Tutup jendela konsolnya untuk menghentikan aplikasi.
+
+Windows mungkin menampilkan satu peringatan keamanan saat file itu pertama kali diklik, karena
+skripnya tidak ditandatangani: pilih **More info** → **Run anyway** (atau **Run**). Shortcut buatan
+pemasang tidak memicu peringatan itu lagi.
 
 Pemasang menaruh semuanya di `%LOCALAPPDATA%\PrakiraanSahamBEI`: salinan kode, uv 0.12.5 (checksum
 SHA-256 diperiksa), Python 3.12, semua paket, dan bobot model foundation. Instalasi butuh internet
@@ -71,11 +76,15 @@ aplikasi berjalan dengan `HF_HUB_OFFLINE=1`, tetapi harga saham dan berita tetap
 Pemasang juga memeriksa hasilnya: setiap model dimuat dari cache dan diuji pada deret sintetis, dan
 koneksi ke Yahoo Finance dicoba.
 
+- Bila torch atau model foundation gagal dipasang, pemasang otomatis memasang versi ringan (random
+  walk dan gradient boosting) dan menyebutkannya di akhir. Klik lagi `pasang_windows.bat` untuk
+  mencoba versi lengkap.
+- Bila ruang kosong kurang dari sekitar 6 GB, pemasang berhenti dengan pesan; kosongkan ruang lalu
+  klik lagi.
 - Versi paket yang terpasang dicatat di `paket-terpasang.txt`, dan jalannya instalasi di `pasang.log`.
-- Memperbarui: unduh ZIP terbaru lalu jalankan lagi `pasang_windows.bat`. `settings.toml` lama
-  dicadangkan dulu.
+- Memperbarui: klik lagi `pasang_windows.bat` dari ZIP terbaru. `settings.toml` lama dicadangkan dulu.
 - Menghapus: Settings → Apps → **Prakiraan Saham Bank BEI** → Uninstall, atau shortcut
-  **Hapus Prakiraan Saham Bank BEI** di Start Menu.
+  **Hapus Prakiraan Saham Bank BEI** di Start Menu. Konfirmasinya berupa tombol Ya/Tidak.
 - Bila `%USERPROFILE%\.streamlit\credentials.toml` belum ada, pemasang membuatnya dengan email
   kosong supaya Streamlit tidak bertanya email saat pertama dijalankan.
 - Skrip pemasang ada di folder `installer/`.

@@ -37,16 +37,12 @@ $VenvDir     = Join-Path $InstallDir 'venv'
 $VenvPython  = Join-Path $VenvDir 'Scripts\python.exe'
 $Launcher    = Join-Path $InstallDir 'jalankan.bat'
 $Uninstaller = Join-Path $InstallDir 'hapus.bat'
+$Scripts     = @('jalankan.bat', 'hapus.bat', 'hapus.ps1')
 $LogFile     = Join-Path $InstallDir 'pasang.log'
 
 function Write-Step([string]$Text) { Write-Host ''; Write-Host "==> $Text" -ForegroundColor Cyan }
 function Write-Note([string]$Text) { Write-Host "    $Text" }
 function Write-Warn([string]$Text) { Write-Host "    PERINGATAN: $Text" -ForegroundColor Yellow }
-
-function Confirm-Yes([string]$Question) {
-    $answer = Read-Host "    $Question (Y/N)"
-    return ($answer -match '^\s*[Yy]')
-}
 
 function Invoke-Native([string]$Exe, [string[]]$Arguments) {
     # Runs a program, shows its output indented, and returns its exit code. These tools
@@ -77,10 +73,12 @@ function Assert-FreeSpace {
     $drive = (Split-Path -Qualifier $env:LOCALAPPDATA).TrimEnd(':')
     $freeGB = [math]::Round((Get-PSDrive -Name $drive).Free / 1GB, 1)
     Write-Note "Ruang kosong di drive ${drive}: $freeGB GB"
-    if ($freeGB -lt $MinFreeGB) {
-        Write-Warn "Instalasi lengkap butuh sekitar $MinFreeGB GB."
-        if (-not (Confirm-Yes 'Tetap lanjutkan?')) { throw 'Dibatalkan karena ruang disk kurang.' }
+    if ($freeGB -ge $MinFreeGB) { return }
+    if (Test-Path $VenvPython) {
+        Write-Warn "Ruang kosong kurang dari $MinFreeGB GB, tetapi instalasi lama dipakai ulang, jadi pembaruan tetap dicoba."
+        return
     }
+    throw "Ruang kosong di drive ${drive} hanya $freeGB GB, padahal instalasi butuh sekitar $MinFreeGB GB. Kosongkan ruang, lalu klik lagi pasang_windows.bat."
 }
 
 function Copy-AppFiles {
@@ -167,12 +165,11 @@ function Install-Packages {
     $full = Join-Path $AppDir 'requirements.txt'
     $code = Invoke-Native $UvExe @('pip', 'install', '--python', $VenvPython, '--index-strategy', 'unsafe-best-match', '-r', $full)
     if ($code -eq 0) { return 'lengkap' }
-    Write-Warn 'Paket lengkap (torch dan model foundation) gagal dipasang; lihat pesan di atas.'
-    if (-not (Confirm-Yes 'Pasang versi ringan saja (random walk dan gradient boosting, tanpa model foundation)?')) {
-        throw 'Instalasi paket gagal.'
-    }
+    # One click must still end in a working app: install the light set instead, and the
+    # final summary (and the app's model list) says that the foundation models are missing.
+    Write-Warn 'Paket lengkap (torch dan model foundation) gagal dipasang; lihat pesan di atas. Versi ringan dipasang sebagai gantinya.'
     $code = Invoke-Native $UvExe @('pip', 'install', '--python', $VenvPython, '-r', (Join-Path $AppDir 'requirements-lite.txt'))
-    if ($code -ne 0) { throw 'Instalasi paket versi ringan juga gagal.' }
+    if ($code -ne 0) { throw 'Paket Python gagal dipasang, juga versi ringannya. Periksa koneksi internet, lalu klik lagi pasang_windows.bat.' }
     return 'ringan'
 }
 
@@ -208,7 +205,7 @@ function Test-Installation {
 }
 
 function Install-Scripts {
-    foreach ($name in @('jalankan.bat', 'hapus.bat', 'hapus.ps1')) {
+    foreach ($name in $Scripts) {
         Copy-Item -Path (Join-Path $AppDir "installer\windows\$name") -Destination (Join-Path $InstallDir $name) -Force
     }
     # Streamlit asks for an e-mail address on its very first run; an empty one skips the question.
@@ -218,6 +215,13 @@ function Install-Scripts {
         New-Item -ItemType Directory -Force -Path $streamlitDir | Out-Null
         Set-Content -Path $credentials -Value "[general]`r`nemail = `"`"" -Encoding ASCII
     }
+}
+
+function Unblock-InstalledFiles {
+    # Files from a downloaded ZIP carry the internet "mark of the web". Removing it keeps
+    # Windows from showing a security warning every time the shortcut starts the app.
+    Get-ChildItem -Path $AppDir -Recurse -File | Unblock-File
+    foreach ($name in $Scripts) { Unblock-File -Path (Join-Path $InstallDir $name) }
 }
 
 function New-Shortcut([string]$Path, [string]$Target, [string]$WorkDir, [string]$Description, [string]$Icon) {
@@ -276,17 +280,18 @@ try {
     Write-Note "Sumber : $Source"
     Write-Note "Tujuan : $InstallDir"
     Write-Note 'Instalasi butuh internet dan bisa cukup lama, tergantung kecepatan koneksi.'
+    Write-Note 'Tidak ada yang perlu diketik: tunggu sampai aplikasi terbuka sendiri di browser.'
 
     Write-Step 'Memeriksa PC'
     Assert-Architecture
     Assert-FreeSpace
 
     # Keep Python, the download cache and the model weights inside the install folder,
-    # and ignore any user-level uv configuration so every PC installs the same way.
+    # and ignore any user-level uv configuration so every PC installs the same way. The
+    # cache sits on the same drive as the venv, so uv hardlinks files instead of copying.
     $env:UV_PYTHON_INSTALL_DIR = Join-Path $InstallDir 'python'
     $env:UV_PYTHON_PREFERENCE = 'only-managed'
     $env:UV_CACHE_DIR = Join-Path $InstallDir 'uv-cache'
-    $env:UV_LINK_MODE = 'copy'
     $env:UV_NO_CONFIG = '1'
     $env:PYTHONUTF8 = '1'
     $env:HF_HOME = Join-Path $InstallDir 'hf-home'
@@ -309,17 +314,19 @@ try {
     Test-Installation
     Write-Step '7/7 Membuat shortcut'
     Install-Scripts
+    Unblock-InstalledFiles
     Install-Shortcuts "$basePython,0"
     Register-Uninstall "$basePython,0"
     Clear-UvCache
 
     Write-Step 'Selesai'
-    Write-Note "$AppName terpasang di $InstallDir (paket $mode)."
-    Write-Note "Buka lewat shortcut '$AppName' di Desktop atau Start Menu."
-    Write-Note 'Aplikasi terbuka di browser; harga saham dan berita tetap butuh internet.'
-    if (Confirm-Yes 'Jalankan aplikasi sekarang?') {
-        Start-Process -FilePath $Launcher -WorkingDirectory $AppDir
+    Write-Note "$AppName terpasang di $InstallDir."
+    if ($mode -eq 'ringan') {
+        Write-Warn 'Yang terpasang versi ringan (random walk dan gradient boosting). Klik lagi pasang_windows.bat untuk mencoba versi lengkap.'
     }
+    Write-Note 'Aplikasi sedang dibuka di browser; harga saham dan berita tetap butuh internet.'
+    Write-Note "Lain kali, buka lewat shortcut '$AppName' di Desktop atau Start Menu."
+    Start-Process -FilePath $Launcher -WorkingDirectory $AppDir
 } catch {
     Write-Host ''
     Write-Host "GAGAL: $($_.Exception.Message)" -ForegroundColor Red
