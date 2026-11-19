@@ -157,9 +157,18 @@ instalasi untuk mengujinya di komputer Anda.
 
 ## Deploy ke Streamlit Community Cloud
 
-Unggah folder ini ke repositori GitHub, pilih `streamlit_app.py` sebagai main file. RAM di Community
-Cloud terbatas; bila instalasi atau pemuatan model gagal, ganti isi `requirements.txt` dengan
-`requirements-lite.txt` atau pilih satu model foundation saja (Chronos-Bolt paling ringan).
+1. Simpan proyek ini di repositori GitHub, misalnya `ahsan4th/idx-bank-forecast`.
+2. Di [share.streamlit.io](https://share.streamlit.io), klik **Create app** → **Yup, I have an app**, lalu
+   isi repositori, branch `main`, dan main file `streamlit_app.py`.
+3. Sebelum **Deploy**, buka **Advanced settings** dan pilih **Python 3.12**. Default Community Cloud
+   mengikuti versi Python terbaru, dan versi Python tidak bisa diganti setelah aplikasi dibuat (harus
+   dihapus lalu di-deploy ulang). Semua paket model di sini membutuhkan Python ≥ 3.10.
+
+Community Cloud memasang `requirements.txt` dengan uv dan beralih ke pip bila uv gagal. Instalasi
+pertama (torch CPU, transformers) bisa memakan beberapa menit, dan bobot model diunduh dari Hugging
+Face saat model pertama kali dipakai. RAM aplikasi dibatasi sekitar 2,7 GB; bila aplikasi berhenti
+karena batas sumber daya, kurangi model foundation yang dipilih (Chronos-Bolt paling ringan) atau
+ganti isi `requirements.txt` dengan `requirements-lite.txt`.
 
 ## Struktur
 
