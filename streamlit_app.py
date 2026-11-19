@@ -459,6 +459,9 @@ if len(date_sets) == 1:
 else:
     dates_text = "Tanggal h+1..h+5 berbeda antarsaham karena tanggal origin berbeda; lihat detail"
 st.caption(f"Model terbaik = MAE rata-rata h+1..h+{HORIZON} terendah di backtest. {dates_text}.")
+# Prices are shown in whole Rupiah and MAE with one decimal. The "localized" format would
+# otherwise print up to three decimals (3.971,243), which an id-ID reader can take for
+# millions. Only the display is rounded; the CSV downloads keep full precision.
 summary_rows = []
 for ticker, r in results.items():
     bt, fc = r["bt"], r["forecast"]
@@ -466,14 +469,14 @@ for ticker, r in results.items():
     best_row = bt.summary.set_index("model").loc[best]
     row = {
         "Saham": code(ticker),
-        "Harga origin": fc.origin_price,
+        "Harga origin": round(float(fc.origin_price)),
         "Tanggal origin": fc.origin_date,
         "Model terbaik": models.variant_label(best),
         "Skill vs random walk (%)": best_row["skill_pct"],
     }
     best_table = fc.table[fc.table["model"] == best].set_index("h")
     for h in range(1, HORIZON + 1):
-        row[f"h+{h}"] = best_table.loc[h, "median"]
+        row[f"h+{h}"] = round(float(best_table.loc[h, "median"]))
     summary_rows.append(row)
 st.dataframe(
     pd.DataFrame(summary_rows),
@@ -552,6 +555,9 @@ with table_col.container(border=True, height="stretch"):
     st.markdown(f"**{models.variant_label(focus)}**, origin {rupiah(fc.origin_price)} ({day_label(fc.origin_date)})")
     shown = focus_rows.assign(
         Horizon=[f"h+{h}" for h in focus_rows["h"]],
+        median=focus_rows["median"].round(0),
+        lower=focus_rows["lower"].round(0),
+        upper=focus_rows["upper"].round(0),
     )[["Horizon", "date", "median", "lower", "upper", "change_pct"]]
     st.dataframe(
         shown,
@@ -612,7 +618,7 @@ with eval_table.container(border=True, height="stretch"):
     table = pd.DataFrame(
         {
             "Model": [labels[k] for k in ranked],
-            **{f"MAE h+{h}": mae[h].to_numpy() for h in range(1, HORIZON + 1)},
+            **{f"MAE h+{h}": mae[h].round(1).to_numpy() for h in range(1, HORIZON + 1)},
             "MAE relatif": bt.summary.set_index("model").loc[ranked, "mean_rel_mae"].to_numpy(),
             "Signifikan lebih baik": bt.summary.set_index("model").loc[ranked, "n_sig_better"].to_numpy(),
             "Arah benar h+1 (%)": metrics[metrics["h"] == 1].set_index("model").loc[ranked, "hit_rate"].to_numpy() * 100,
@@ -672,7 +678,11 @@ if len(bt.ablation):
             "Rasio < 1 berarti sentimen menurunkan galat. p dari uji DM antara model dengan dan tanpa "
             "sentimen, dikoreksi Holm."
         )
-        ab = bt.ablation.assign(Model=bt.ablation["model"].map(models.variant_label))
+        ab = bt.ablation.assign(
+            Model=bt.ablation["model"].map(models.variant_label),
+            mae_without=bt.ablation["mae_without"].round(1),
+            mae_with=bt.ablation["mae_with"].round(1),
+        )
         st.dataframe(
             ab[["Model", "h", "mae_without", "mae_with", "ratio", "dm_p", "dm_p_holm"]],
             hide_index=True,
