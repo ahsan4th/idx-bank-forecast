@@ -52,6 +52,32 @@ def _line_type(key: str) -> str:
     return "solid"
 
 
+def _watermark(text: str, mode: str) -> list[dict[str, Any]]:
+    """Faint credit text at the plot's lower right, drawn under the series.
+
+    It is part of the chart, so a screenshot or saved image of the chart keeps it.
+    An empty text means no watermark.
+    """
+    if not text:
+        return []
+    return [
+        {
+            "type": "text",
+            "right": 24,
+            "bottom": 36,
+            "z": 1,
+            "silent": True,
+            "style": {
+                "text": text,
+                "fill": _pick(INK, mode),
+                "opacity": 0.3,
+                "fontSize": 12,
+                "fontWeight": 600,
+            },
+        }
+    ]
+
+
 def fan_chart_option(
     history: pd.Series,
     focus_key: str,
@@ -60,6 +86,7 @@ def fan_chart_option(
     compare: dict[str, tuple[str, pd.DataFrame]],
     level: float,
     mode: str,
+    watermark: str,
 ) -> dict[str, Any]:
     """Recent closes, the focus model's median with its interval band, other medians.
 
@@ -160,11 +187,12 @@ def fan_chart_option(
         "xAxis": {"type": "category", "boundaryGap": False},
         "yAxis": {"type": "value", "scale": True, "axisLabel": {"formatter": PRICE_FORMAT}},
         "series": series,
+        "graphic": _watermark(watermark, mode),
     }
 
 
 def skill_chart_option(
-    rel_mae: pd.DataFrame, labels: dict[str, str], mode: str
+    rel_mae: pd.DataFrame, labels: dict[str, str], mode: str, watermark: str
 ) -> dict[str, Any]:
     """Relative MAE (model / random walk) by horizon; below 1 beats the random walk.
 
@@ -200,10 +228,11 @@ def skill_chart_option(
         "xAxis": {"type": "category"},
         "yAxis": {"type": "value", "scale": True},
         "series": series,
+        "graphic": _watermark(watermark, mode),
     }
 
 
-def tone_chart_option(features: pd.DataFrame, mode: str) -> dict[str, Any]:
+def tone_chart_option(features: pd.DataFrame, mode: str, watermark: str) -> dict[str, Any]:
     """Daily GDELT tone per trading day and its exponentially weighted mean."""
     data = pd.DataFrame(
         {
@@ -240,4 +269,5 @@ def tone_chart_option(features: pd.DataFrame, mode: str) -> dict[str, Any]:
                 "markLine": {"silent": True, "symbol": "none", "data": [{"yAxis": 0}]},
             },
         ],
+        "graphic": _watermark(watermark, mode),
     }

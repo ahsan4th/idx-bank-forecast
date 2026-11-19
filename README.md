@@ -61,6 +61,10 @@ BEI, jumlah origin backtest, tingkat interval, hiperparameter gradient boosting,
 foundation, dan setelan sentimen. Tidak ada nilai default tersembunyi di kode; kunci yang hilang
 membuat aplikasi berhenti saat start. Tema tampilan ada di `.streamlit/config.toml`.
 
+Tanda air "Muhammad Ahsan · ITS" tampil samar di pojok kanan bawah halaman dan di dalam setiap
+grafik, sehingga tangkapan layar grafik tetap membawanya. Teksnya diatur lewat `watermark` di
+bagian `[ui]`; isi `""` untuk mematikannya.
+
 Di sidebar:
 
 - **Data dan model** (diterapkan dengan tombol *Terapkan*): saham, riwayat harga, model, jumlah

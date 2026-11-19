@@ -19,7 +19,7 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
-from forecaster import charts, market, models, pipeline
+from forecaster import branding, charts, market, models, pipeline
 from forecaster import data as price_data
 from forecaster import sentiment as news
 from forecaster.config import load_settings
@@ -46,6 +46,12 @@ st.set_page_config(
     page_icon=":material/query_stats:",
     layout="wide",
 )
+
+# Tanda air di pojok kanan bawah, ditempelkan ke container header (key "header").
+# st.html yang hanya berisi <style> tidak memakan ruang di halaman.
+WATERMARK_KEY = "header"
+if SETTINGS.ui.watermark:
+    st.html(branding.watermark_css(SETTINGS.ui.watermark, WATERMARK_KEY))
 
 
 # ------------------------------------------------------------------ formatting
@@ -299,7 +305,7 @@ phase = market.market_phase(now, calendar.is_session(today), SETTINGS.market)
 trading_now = phase in market.TRADING_PHASES
 mode = st.context.theme.type or "light"
 
-with st.container(horizontal=True, vertical_alignment="center"):
+with st.container(horizontal=True, vertical_alignment="center", key=WATERMARK_KEY):
     st.title("Prakiraan harga saham bank BEI", icon=":material/query_stats:", anchor=False)
     st.badge(
         market.PHASE_LABELS_ID[phase],
@@ -533,7 +539,10 @@ with chart_col.container(border=True, height="stretch"):
     )
     history = r["origin_frame"]["Close"].iloc[-SETTINGS.ui.chart_history_days:]
     st.echarts_chart(
-        charts.fan_chart_option(history, focus, models.variant_label(focus), focus_rows, compare, level, mode),
+        charts.fan_chart_option(
+            history, focus, models.variant_label(focus), focus_rows, compare, level, mode,
+            SETTINGS.ui.watermark,
+        ),
         height=380,
         alt=f"Harga {code(view)} {len(history)} hari bursa terakhir dan prakiraan "
         f"{models.variant_label(focus)} {HORIZON} hari ke depan dengan interval {level:.0%}",
@@ -593,7 +602,7 @@ labels = {k: models.variant_label(k) for k in ranked}
 eval_chart, eval_table = st.columns([2, 3], gap="medium")
 with eval_chart.container(border=True, height="stretch"):
     st.echarts_chart(
-        charts.skill_chart_option(rel, labels, mode),
+        charts.skill_chart_option(rel, labels, mode, SETTINGS.ui.watermark),
         height=320,
         alt=f"MAE relatif terhadap random walk per horizon untuk {code(view)}; model terbaik "
         f"{models.variant_label(bt.best_model)}",
@@ -685,7 +694,9 @@ if r["sentiment"] is not None:
             "artikel atau di luar cakupan data."
         )
         st.echarts_chart(
-            charts.tone_chart_option(r["sentiment"].iloc[-SETTINGS.ui.chart_history_days:], mode),
+            charts.tone_chart_option(
+                r["sentiment"].iloc[-SETTINGS.ui.chart_history_days:], mode, SETTINGS.ui.watermark
+            ),
             height=240,
             alt=f"Tone berita harian untuk {code(view)} dan rata-rata tertimbang eksponensialnya",
         )

@@ -21,11 +21,24 @@ WIB = "Asia/Jakarta"
 
 
 def test_missing_key_fails_loudly(tmp_path: Path):
-    text = (ROOT / "settings.toml").read_text()
+    text = (ROOT / "settings.toml").read_text(encoding="utf-8")
     broken = tmp_path / "settings.toml"
-    broken.write_text(text.replace('history_period = "5y"\n', ""))
+    broken.write_text(text.replace('history_period = "5y"\n', ""), encoding="utf-8")
     with pytest.raises(KeyError):
         load_settings(broken)
+
+
+def test_watermark_setting(tmp_path: Path):
+    text = (ROOT / "settings.toml").read_text(encoding="utf-8")
+    assert load_settings(ROOT / "settings.toml").ui.watermark == "Muhammad Ahsan · ITS"
+    for replacement, error in (("watermark = 1", TypeError), ("", KeyError)):
+        broken = tmp_path / "settings.toml"
+        broken.write_text(text.replace('watermark = "Muhammad Ahsan · ITS"', replacement), encoding="utf-8")
+        with pytest.raises(error):
+            load_settings(broken)
+    off = tmp_path / "settings.toml"
+    off.write_text(text.replace('watermark = "Muhammad Ahsan · ITS"', 'watermark = ""'), encoding="utf-8")
+    assert load_settings(off).ui.watermark == ""
 
 
 @pytest.mark.parametrize(

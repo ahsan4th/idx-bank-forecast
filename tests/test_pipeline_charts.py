@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from forecaster.charts import fan_chart_option, model_color, skill_chart_option
+from forecaster.charts import fan_chart_option, model_color, skill_chart_option, tone_chart_option
 from forecaster.models import Chronos2Runner, TimestralRunner
 from forecaster.pipeline import backtest_origin_indices, run_backtest, run_final_forecast
 from forecaster.sentiment import align_to_trading_days
@@ -118,7 +118,10 @@ def test_fan_chart_option_is_consistent(backtest_result, settings):
     }
     history = frame["Close"].iloc[-120:]
     for mode in ("light", "dark"):
-        option = fan_chart_option(history, "gbm", "Gradient boosting", focus, compare, 0.8, mode)
+        option = fan_chart_option(
+            history, "gbm", "Gradient boosting", focus, compare, 0.8, mode, settings.ui.watermark
+        )
+        assert [g["style"]["text"] for g in option["graphic"]] == [settings.ui.watermark]
         data = option["dataset"]["source"]
         for s in option["series"]:
             for column in np.atleast_1d(s["encode"]["y"]):
@@ -136,6 +139,20 @@ def test_fan_chart_option_is_consistent(backtest_result, settings):
 
 def test_skill_chart_option():
     rel = pd.DataFrame([[1.0, 1.0], [0.98, 1.02]], index=["naive", "gbm"], columns=[1, 2])
-    option = skill_chart_option(rel, {"naive": "Random walk", "gbm": "GB"}, "light")
+    option = skill_chart_option(rel, {"naive": "Random walk", "gbm": "GB"}, "light", "Muhammad Ahsan · ITS")
     assert list(option["dataset"]["source"].columns) == ["horizon", "Random walk", "GB"]
     assert option["series"][0]["markLine"]["data"] == [{"yAxis": 1}]
+    watermark = option["graphic"][0]
+    assert watermark["style"]["text"] == "Muhammad Ahsan · ITS"
+    assert watermark["silent"] is True  # never intercepts hover or clicks
+    assert watermark["z"] < 2  # ECharts series sit at z = 2, so data draws over the text
+    # An empty watermark setting turns the chart watermark off.
+    assert skill_chart_option(rel, {"naive": "Random walk", "gbm": "GB"}, "dark", "")["graphic"] == []
+
+
+def test_tone_chart_option_carries_watermark():
+    index = pd.bdate_range("2026-01-05", periods=10)
+    features = pd.DataFrame({"sent_tone": np.linspace(-1, 1, 10), "sent_tone_ewm": np.zeros(10)}, index=index)
+    option = tone_chart_option(features, "dark", "Muhammad Ahsan · ITS")
+    assert [g["style"]["text"] for g in option["graphic"]] == ["Muhammad Ahsan · ITS"]
+    assert tone_chart_option(features, "light", "")["graphic"] == []

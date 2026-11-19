@@ -131,3 +131,5 @@ headlines_max_records = 25
 chart_history_days = 120
 refresh_options_seconds = [0, 30, 60, 120, 300]
 refresh_default_seconds = 60
+# Tanda air di pojok kanan bawah halaman dan di setiap grafik. Isi "" untuk mematikannya.
+watermark = "Muhammad Ahsan · ITS"

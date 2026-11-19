@@ -153,6 +153,7 @@ class UISettings:
     chart_history_days: int
     refresh_options_seconds: tuple[int, ...]
     refresh_default_seconds: int
+    watermark: str  # "" = no watermark
 
 
 @dataclass(frozen=True)
@@ -319,10 +320,13 @@ def load_settings(path: Path) -> Settings:
         )
 
     u = raw["ui"]
+    if not isinstance(u["watermark"], str):
+        raise TypeError('ui.watermark must be a string ("" turns the watermark off)')
     ui = UISettings(
         chart_history_days=int(u["chart_history_days"]),
         refresh_options_seconds=tuple(int(x) for x in u["refresh_options_seconds"]),
         refresh_default_seconds=int(u["refresh_default_seconds"]),
+        watermark=u["watermark"],
     )
     if ui.refresh_default_seconds not in ui.refresh_options_seconds:
         raise ValueError("ui.refresh_default_seconds must be in refresh_options_seconds")
