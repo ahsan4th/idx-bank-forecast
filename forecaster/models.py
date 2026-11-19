@@ -60,7 +60,7 @@ MODEL_SPECS: dict[str, ModelSpec] = {
     ),
     "timestral": ModelSpec(
         "timestral", "Timestral", "foundation", ("torch", "timestral"),
-        f"pip install git+https://github.com/mistralai/timestral.git@{TIMESTRAL_COMMIT}",
+        f"pip install https://github.com/mistralai/timestral/archive/{TIMESTRAL_COMMIT}.zip",
         True,
         "Mistral, 209M parameter, Okt 2026; lisensi bobot Modified MIT.",
     ),

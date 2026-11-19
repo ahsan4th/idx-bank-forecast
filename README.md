@@ -54,6 +54,32 @@ streamlit run streamlit_app.py
 - Setelah instalasi berhasil, kunci versi untuk reproduksibilitas: `pip freeze > requirements.lock.txt`.
 - Untuk menjalankan tes: `pip install -r requirements-dev.txt`, lalu `pytest`.
 
+## Instal di PC Windows (tanpa server)
+
+Untuk Windows 10/11 64-bit, tanpa hak admin dan tanpa memasang Python sendiri:
+
+1. Unduh kode sebagai ZIP dari GitHub (**Code** → **Download ZIP**), lalu ekstrak.
+2. Klik dua kali `pasang_windows.bat`. Bila Windows menampilkan peringatan keamanan, pilih
+   **More info** → **Run anyway** (atau **Run**), karena skripnya tidak ditandatangani.
+3. Setelah selesai, buka aplikasi lewat shortcut **Prakiraan Saham Bank BEI** di Desktop atau
+   Start Menu. Aplikasi terbuka di browser; tutup jendela konsolnya untuk berhenti.
+
+Pemasang menaruh semuanya di `%LOCALAPPDATA%\PrakiraanSahamBEI`: salinan kode, uv 0.12.5 (checksum
+SHA-256 diperiksa), Python 3.12, semua paket, dan bobot model foundation. Instalasi butuh internet
+dan ruang kosong sekitar 6 GB (perkiraan). Setelah itu bobot model tidak diunduh lagi karena
+aplikasi berjalan dengan `HF_HUB_OFFLINE=1`, tetapi harga saham dan berita tetap butuh internet.
+Pemasang juga memeriksa hasilnya: setiap model dimuat dari cache dan diuji pada deret sintetis, dan
+koneksi ke Yahoo Finance dicoba.
+
+- Versi paket yang terpasang dicatat di `paket-terpasang.txt`, dan jalannya instalasi di `pasang.log`.
+- Memperbarui: unduh ZIP terbaru lalu jalankan lagi `pasang_windows.bat`. `settings.toml` lama
+  dicadangkan dulu.
+- Menghapus: Settings → Apps → **Prakiraan Saham Bank BEI** → Uninstall, atau shortcut
+  **Hapus Prakiraan Saham Bank BEI** di Start Menu.
+- Bila `%USERPROFILE%\.streamlit\credentials.toml` belum ada, pemasang membuatnya dengan email
+  kosong supaya Streamlit tidak bertanya email saat pertama dijalankan.
+- Skrip pemasang ada di folder `installer/`.
+
 ## Pengaturan
 
 Semua parameter yang memengaruhi hasil ada di `settings.toml`: daftar saham, periode data, jam sesi

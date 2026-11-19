@@ -1,0 +1,4 @@
+# Skrip Windows disimpan dengan akhir baris CRLF apa adanya, sehingga tetap CRLF di setiap
+# checkout dan di ZIP unduhan GitHub (cmd.exe kadang salah membaca label pada file LF).
+*.bat -text
+*.ps1 -text
