@@ -1,0 +1,12 @@
+# Lengkap: data + gradient boosting + model foundation + sentimen berita.
+# Torch versi CPU (hapus baris berikut jika memakai GPU NVIDIA dan pasang torch sesuai CUDA Anda).
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+-r requirements-lite.txt
+
+torch>=2.4
+chronos-forecasting>=2.1
+timesfm[torch]>=3.0
+# Timestral dipin ke commit yang dibaca saat aplikasi ini ditulis (15 Okt 2026).
+timestral @ git+https://github.com/mistralai/timestral.git@a534bdbd244d64f3d9d743f46c7bf6fc330ed4ff
+gdeltdoc>=1.12

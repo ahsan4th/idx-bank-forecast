@@ -1,0 +1,10 @@
+[project]
+name = "idx-bank-forecast"
+version = "1.0.0"
+description = "Streamlit app: h+1..h+5 forecasts of BBCA, BBRI, BMRI with foundation models, gradient boosting, and a random-walk benchmark"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+filterwarnings = ["error::FutureWarning"]

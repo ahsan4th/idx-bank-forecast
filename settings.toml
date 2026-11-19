@@ -1,0 +1,133 @@
+# Seluruh parameter yang memengaruhi data, model, dan evaluasi ada di file ini.
+# Kode tidak menyimpan nilai default tersembunyi: kunci yang hilang membuat aplikasi
+# berhenti dengan KeyError saat start. Ubah nilai di sini, lalu jalankan ulang aplikasi.
+
+[data]
+tickers_default = ["BBCA.JK", "BBRI.JK", "BMRI.JK"]
+tickers_optional = ["BBNI.JK"]
+history_period = "5y"
+history_period_options = ["3y", "5y", "10y", "max"]
+# Harga disesuaikan dividen dan stock split (yfinance auto_adjust). Return log harian
+# jadi bebas lompatan akibat aksi korporasi, dan close terakhir = harga pasar aktual.
+auto_adjust = true
+# Perbaikan heuristik harga dari yfinance dimatikan. Data dipakai apa adanya dan
+# kejanggalannya dilaporkan di panel kualitas data.
+yahoo_repair = false
+daily_cache_ttl_seconds = 900
+# Harus lebih pendek dari interval refresh live terpendek di [ui].
+intraday_cache_ttl_seconds = 25
+intraday_interval = "1m"
+request_timeout_seconds = 20
+# Return log harian di atas ambang ini ditandai sebagai kemungkinan error data
+# (tidak diubah, hanya dilaporkan).
+max_abs_daily_log_return = 0.35
+# Deret close identik berturut-turut dengan volume nol sepanjang ini dilaporkan.
+stale_run_length = 5
+
+[market]
+timezone = "Asia/Jakarta"
+calendar = "XIDX"
+# Yahoo Finance: Indonesia Stock Exchange (.JK), delay 10 menit, penyedia ICE Data Services.
+yahoo_delay_minutes = 10
+# Bar harian hari ini dianggap final setelah jam ini (WIB): pra-penutupan selesai 16:00,
+# ditambah delay Yahoo 10 menit dan margin 20 menit.
+daily_bar_final_time = "16:30"
+# Jam pasar reguler (Kep-00003/BEI/04-2025). Perbarui jika BEI mengubah jam perdagangan.
+pre_opening = ["08:45", "09:00"]
+sessions_mon_thu = [["09:00", "12:00"], ["13:30", "15:50"]]
+sessions_fri = [["09:00", "11:30"], ["14:00", "15:50"]]
+pre_closing = ["15:50", "16:00"]
+
+[forecast]
+horizon = 5
+interval_levels = [0.80, 0.90, 0.95]
+interval_level_default = 0.80
+seed = 20261119
+
+[backtest]
+n_origins_options = [30, 60, 120, 250]
+n_origins_default = 60
+dm_alpha = 0.05
+hit_rate_ci_level = 0.95
+# Uji cakupan interval: residual dari bagian awal origin dipakai untuk kalibrasi,
+# cakupan diukur pada origin sisanya (out-of-sample).
+coverage_calibration_fraction = 0.5
+
+[models]
+# Hanya model yang paketnya terpasang yang akan dipilih otomatis.
+default_selection = ["naive", "gbm", "chronos2", "timestral"]
+
+[models.gbm]
+# Gradient boosting (HistGradientBoosting, keluarga LightGBM) strategi direct:
+# satu model per horizon untuk return log kumulatif h hari.
+refit_every = 20
+min_train_samples = 250
+loss = "absolute_error"   # median bersyarat; konsisten dengan evaluasi MAE
+learning_rate = 0.05
+max_iter = 200
+max_leaf_nodes = 15
+min_samples_leaf = 40
+l2_regularization = 1.0
+return_lags = 5
+momentum_windows = [5, 10, 20, 60]
+volatility_windows = [5, 20, 60]
+ma_windows = [20, 60]
+rsi_window = 14
+volume_window = 20
+range_window = 5
+
+[models.foundation]
+# Panjang konteks (hari bursa) yang diberikan ke model foundation.
+context_length = 512
+device = "cpu"            # "cpu", "cuda", atau "mps"
+native_quantile_low = 0.1
+native_quantile_high = 0.9
+
+[models.chronos2]
+model_id = "amazon/chronos-2"
+batch_size = 256
+
+[models.chronos_bolt]
+model_id = "amazon/chronos-bolt-small"
+
+[models.timestral]
+model_id = "mistralai/Timestral-209M"
+symmetric_averaging = true
+
+[models.timesfm]
+model_id = "google/timesfm-2.5-200m-pytorch"
+torch_compile = false
+per_core_batch_size = 32
+max_horizon = 128
+normalize_inputs = true
+use_continuous_quantile_head = true
+force_flip_invariance = true
+infer_is_positive = true
+fix_quantile_crossing = true
+
+[sentiment]
+enabled_default = false
+source = "gdelt"
+# Mode timeline GDELT DOC 2.0 mencakup berita sejak 1 Januari 2017.
+earliest_date = "2017-01-01"
+chunk_days = 365
+request_pause_seconds = 5.0
+# Bin harian GDELT berbasis UTC (07:00 WIB s/d 07:00 WIB hari berikutnya). Bin UTC
+# hari t memuat berita setelah close hari t, jadi prakiraan dari close hari t hanya
+# boleh memakai bin sampai hari t-1.
+lag_days = 1
+ewm_halflife_days = 5
+cache_ttl_seconds = 21600
+headlines_timespan = "3d"
+headlines_max_records = 25
+
+[sentiment.queries]
+"BBCA.JK" = ["Bank Central Asia", "BBCA"]
+"BBRI.JK" = ["Bank Rakyat Indonesia", "BBRI"]
+"BMRI.JK" = ["Bank Mandiri", "BMRI"]
+"BBNI.JK" = ["Bank Negara Indonesia", "BBNI"]
+
+[ui]
+chart_history_days = 120
+refresh_options_seconds = [0, 30, 60, 120, 300]
+refresh_default_seconds = 60

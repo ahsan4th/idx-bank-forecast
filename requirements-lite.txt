@@ -1,0 +1,8 @@
+# Inti: data Yahoo Finance, kalender BEI, random walk, dan gradient boosting (tanpa torch).
+streamlit>=1.67.0
+yfinance>=1.6
+pandas>=2.2
+numpy>=1.26
+scikit-learn>=1.5
+scipy>=1.11
+exchange_calendars>=4.5
